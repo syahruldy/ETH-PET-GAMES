@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ETHPet</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+    body {
+      margin: 0;
+      font-family: 'VT323', monospace;
+      background-color: #a3b6ff;
+      color: #000;
+      overflow: hidden;
+    }
+
+    .window {
+      width: 500px;
+      height: 600px;
+      background: #e0e0e0;
+      border: 3px solid #444;
+      box-shadow: 4px 4px 0px #000;
+      margin: 40px auto;
+      padding: 10px;
+      position: relative;
+    }
+
+    .tabs {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 5px;
+    }
+
+    .tab {
+      background: #d6d6d6;
+      padding: 4px 10px;
+      border: 2px solid #222;
+      box-shadow: 2px 2px 0px #444;
+      cursor: pointer;
+    }
+
+    .tab.active {
+      background: #fff;
+      border-bottom: none;
+      box-shadow: none;
+    }
+
+    .game-area {
+      position: relative;
+      width: 100%;
+      height: 480px;
+      background-size: cover;
+      background-position: center;
+      border: 2px solid #222;
+      overflow: hidden;
+    }
+
+    .pet-container {
+      position: absolute;
+      bottom: 70px;
+      left: 190px;
+      width: 120px;
+      animation: bounce 2s infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-15px); }
+    }
+
+    .pet {
+      width: 100%;
+      position: relative;
+    }
+
+    .eyes {
+      position: absolute;
+      top: 37px;
+      left: 36px;
+      width: 50px;
+      height: 20px;
+      display: flex;
+      justify-content: space-between;
+      pointer-events: none;
+    }
+
+    .eye {
+      width: 10px;
+      height: 10px;
+      background: black;
+      border-radius: 50%;
+      animation: blink 4s infinite;
+    }
+
+    .eye.tired {
+      height: 2px;
+      animation: none;
+    }
+
+    @keyframes blink {
+      0%, 95%, 100% { height: 10px; }
+      96%, 97% { height: 2px; }
+    }
+
+    .pet-name-display {
+      position: absolute;
+      bottom: 5px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 22px;
+      color: #fff;
+      text-shadow: 1px 1px 2px #000;
+    }
+
+    .items {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .item {
+      font-size: 24px;
+      cursor: grab;
+      user-select: none;
+    }
+
+    .stats {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 10px;
+    }
+
+    .stat {
+      width: 30%;
+    }
+
+    .bar-bg {
+      width: 100%;
+      background: #ccc;
+      height: 10px;
+      border: 1px solid #222;
+    }
+
+    .bar-fill {
+      height: 10px;
+      background: #7fffd4;
+    }
+
+    .button {
+      background: #d6d6d6;
+      border: 2px solid #000;
+      box-shadow: 2px 2px #000;
+      font-family: 'VT323', monospace;
+      font-size: 16px;
+      padding: 6px 12px;
+      cursor: pointer;
+    }
+
+    .button:hover {
+      background-color: #fff;
+      color: #00ff00;
+      box-shadow: 0 0 5px #00ff00;
+    }
+
+    .modal {
+      position: absolute;
+      top: 40px;
+      left: 40px;
+      width: 400px;
+      height: 400px;
+      background: #222;
+      color: #0f0;
+      border: 3px solid #0f0;
+      font-family: 'VT323', monospace;
+      font-size: 18px;
+      padding: 20px;
+      z-index: 10;
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .start-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      color: #fff;
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .start-overlay input {
+      font-size: 18px;
+      padding: 5px 10px;
+      font-family: 'VT323', monospace;
+      margin-top: 10px;
+      border: 2px solid #fff;
+      background: #000;
+      color: #fff;
+    }
+
+    .start-overlay button {
+      margin-top: 10px;
+      padding: 6px 12px;
+      font-family: 'VT323', monospace;
+      font-size: 18px;
+      background: #000;
+      color: #fff;
+      border: 2px solid #fff;
+      cursor: pointer;
+    }
+
+    .start-overlay button:hover {
+      background: #fff;
+      color: #000;
+    }
+  </style>
+</head>
+<body>
+  <div class="window">
+    <!-- Start screen overlay -->
+    <div class="start-overlay" id="startOverlay">
+      <div>Welcome to EthOS PET Games</div>
+      <input id="petNameInput" placeholder="Name your ETHPet" />
+      <button onclick="startGame()">Play</button>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-room="kitchen">🍽️ Kitchen</div>
+      <div class="tab" data-room="bathroom">🛁 Bathroom</div>
+      <div class="tab" data-room="playroom">🧸 Playroom</div>
+      <div class="tab" data-room="bedroom">🛏️ Bedroom</div>
+    </div>
+
+    <div id="gameArea" class="game-area">
+      <div class="pet-container">
+        <img src="./custom-block.png" class="pet" id="pet">
+        <div class="eyes" id="eyes">
+          <div class="eye" id="eyeL"></div>
+          <div class="eye" id="eyeR"></div>
+        </div>
+      </div>
+      <div class="pet-name-display" id="petNameDisplay"></div>
+    </div>
+
+    <div class="items" id="items"></div>
+
+    <div class="stats">
+      <div class="stat">
+        <div>Hunger</div>
+        <div class="bar-bg"><div id="hungerBar" class="bar-fill"></div></div>
+      </div>
+      <div class="stat">
+        <div>Clean</div>
+        <div class="bar-bg"><div id="cleanBar" class="bar-fill"></div></div>
+      </div>
+      <div class="stat">
+        <div>Energy</div>
+        <div class="bar-bg"><div id="energyBar" class="bar-fill"></div></div>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:10px;" id="minigameButtonContainer"></div>
+
+    <div class="modal" id="minigameMenu">
+      <h2>Select Mini Game</h2>
+      <button onclick="startMini('clean')">🫧 Clean Splash</button>
+      <button onclick="startMini('catch')">🍎 Blob Catch</button>
+      <button onclick="startMini('rest')">😴 Rest Rhythm</button>
+      <button onclick="startMini('paint')">🎨 Pixel Painter</button>
+      <button onclick="closeMenu()">❌ Close</button>
+    </div>
+  </div>
+
+  <script>
+    let petName = "";
+    const hungerBar = document.getElementById('hungerBar');
+    const cleanBar = document.getElementById('cleanBar');
+    const energyBar = document.getElementById('energyBar');
+    const itemsDiv = document.getElementById('items');
+    const gameArea = document.getElementById('gameArea');
+    const eyes = document.getElementById('eyes');
+    const eyeL = document.getElementById('eyeL');
+    const eyeR = document.getElementById('eyeR');
+    const miniGameButtonContainer = document.getElementById('minigameButtonContainer');
+    const minigameMenu = document.getElementById('minigameMenu');
+    const petNameDisplay = document.getElementById('petNameDisplay');
+    const startOverlay = document.getElementById('startOverlay');
+
+    let currentRoom = "kitchen";
+    let stats = { hunger: 100, clean: 100, energy: 100 };
+
+    const roomImages = {
+      kitchen: "./kitchen.jpg",
+      bathroom: "./bathroom.jpg",
+      playroom: "./livingroom.jpg",
+      bedroom: "./bedroom.jpg"
+    };
+
+    const roomItems = {
+      kitchen: ['🍎'],
+      bathroom: ['🧼'],
+      playroom: ['🧸'],
+      bedroom: ['🛏️']
+    };
+
+    function startGame() {
+      const input = document.getElementById("petNameInput");
+      if (!input.value.trim()) return alert("Please name your ETHPet!");
+      petName = input.value.trim();
+      petNameDisplay.textContent = petName;
+      startOverlay.style.display = "none";
+      switchRoom(currentRoom);
+    }
+
+    function switchRoom(room) {
+      currentRoom = room;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelector(`.tab[data-room="${room}"]`).classList.add('active');
+      gameArea.style.backgroundImage = `url(${roomImages[room]})`;
+      updateItems();
+      updateMiniGameButton();
+    }
+
+    function updateItems() {
+      itemsDiv.innerHTML = '';
+      roomItems[currentRoom].forEach(symbol => {
+        const item = document.createElement('div');
+        item.className = 'item';
+        item.textContent = symbol;
+        item.draggable = true;
+        item.ondragstart = e => e.dataTransfer.setData("text/plain", symbol);
+        itemsDiv.appendChild(item);
+      });
+    }
+
+    function updateMiniGameButton() {
+      miniGameButtonContainer.innerHTML = '';
+      if (currentRoom === 'playroom') {
+        const btn = document.createElement('button');
+        btn.textContent = '🎮 Mini Game';
+        btn.className = 'button';
+        btn.onclick = () => minigameMenu.style.display = 'flex';
+        miniGameButtonContainer.appendChild(btn);
+      }
+    }
+
+    function closeMenu() {
+      minigameMenu.style.display = 'none';
+    }
+
+    function sparkle() {
+      const spark = document.createElement('div');
+      spark.textContent = '✨';
+      spark.style.position = 'absolute';
+      spark.style.left = '200px';
+      spark.style.bottom = '180px';
+      spark.style.fontSize = '24px';
+      gameArea.appendChild(spark);
+      setTimeout(() => gameArea.removeChild(spark), 1000);
+    }
+
+    function updateStatsUI() {
+      hungerBar.style.width = stats.hunger + "%";
+      cleanBar.style.width = stats.clean + "%";
+      energyBar.style.width = stats.energy + "%";
+      const tired = stats.energy < 30;
+      eyeL.className = tired ? 'eye tired' : 'eye';
+      eyeR.className = tired ? 'eye tired' : 'eye';
+    }
+
+    function startMini(type) {
+      closeMenu();
+      switch (type) {
+        case 'clean': alert("🫧 Clean Splash!"); stats.clean = Math.min(100, stats.clean + 10); break;
+        case 'catch': alert("🍎 Blob Catch!"); stats.hunger = Math.min(100, stats.hunger + 10); break;
+        case 'rest': alert("😴 Rest Rhythm!"); stats.energy = Math.min(100, stats.energy + 10); break;
+        case 'paint': alert("🎨 Pixel Painter!"); break;
+      }
+      updateStatsUI();
+    }
+
+    gameArea.ondragover = e => e.preventDefault();
+    gameArea.ondrop = e => {
+      e.preventDefault();
+      const symbol = e.dataTransfer.getData("text/plain");
+      if (symbol === '🍎') stats.hunger = Math.min(100, stats.hunger + 20);
+      if (symbol === '🧼') stats.clean = Math.min(100, stats.clean + 20);
+      if (symbol === '🧸') stats.energy = Math.min(100, stats.energy + 20);
+      if (symbol === '🛏️') stats.energy = Math.min(100, stats.energy + 40);
+      sparkle();
+      updateStatsUI();
+    };
+
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => switchRoom(tab.dataset.room));
+    });
+
+    setInterval(() => {
+      stats.hunger = Math.max(0, stats.hunger - 0.1);
+      stats.clean = Math.max(0, stats.clean - 0.05);
+      stats.energy = Math.max(0, stats.energy - 0.03);
+      updateStatsUI();
+    }, 100);
+  </script>
+</body>
+</html>
